@@ -59,8 +59,8 @@ def translate_can():
 	if len(translatedData)==0 and len(unknown)==0:
 		return ("Error 0: No parsable data. Check your format")
 	
-	return (csv)
-	return render_template('results', translatedData=translatedData, csv=csv, unknown=str(unknown))	
+	#return (csv)
+	return render_template('results.html', translatedData=translatedData, csv=csv, unknown=str(unknown)).encode( "utf-8" )
 
 
 
@@ -90,7 +90,7 @@ def parseString(string_data):
 		if len(CANdata) > sizelimit:
 			break
 		try:
-			data = each.translate([None, ' \r\n']).split(';') #splits into four parts: time, bus, PGN, data `04T124059196;1;18eeff0b;c009c40600090200`
+			data = each.translate({ord(c): None for c in ' \r\n'}).split(';') #splits into four parts: time, bus, PGN, data `04T124059196;1;18eeff0b;c009c40600090200`
 			if len(data) == 4:
 				if len(data[3]) < 7:
 					data[3] = data[3].zfill(8) # fill the DATA with 0s if it isn't a full 8 bytes. Could fill with FFs I guess.
