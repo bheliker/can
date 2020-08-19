@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="CAN Translator by Brett heliker">
+    <meta name="author" content="brett@brettsbeta.com">
+    <title>CAN data translator</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://www.brettsbeta.com/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="https://www.brettsbeta.com/bheliker/bheliker.css" rel="stylesheet">
+  </head>
+
+  <body class="bg-dark" >
+    <!-- Page Content -->
+    <div class="container">
+      <div class="row">
+      <div class="col-lg-2 col-sm-2 portfolio-item"></div>
+      <h1 class="my-4 text-white">CAN<small class="text-secondary">slator</small></h1>
+      </div> <!-- /row -->
+
+	{% if errors %}
+      <div class="row align-items-center justify-content-md-center">
+        <div class="alert alert-danger text-center col-lg-6 col-sm-6"> 
+         {{errors}}
+         </div>
+      </div>
+	{% endif %}
+	
+      <div class="row">
+      	<div class="col-lg-2 col-sm-2 portfolio-item"></div>
+        <div class="col-lg-8 col-sm-4 portfolio-item">
+          <div class="card bg-light" style="padding:10px;">        
+			<form action="result" method="post">
+			
+			  <div class="form-row align-items-center justify-content-md-center">
+				<div class="form-group col-md-4">
+				  <select id="inputState" class="form-control"  name="format">
+					  <option value="-1" selected>Format</option>
+					  <option value="1">CANDump</option>
+					  <option value="0">CANvas</option>
+				  </select>
+				</div>
+			  </div>
+
+			  <div class="form-row">
+				<div class="form-group col-md-4">
+<!-- 
+				  <label for="inputState">Year</label>
+ -->
+				  <select id="inputState" class="form-control"  name="year">
+					<option value="1970" selected>Year</option>
+					  <option value="2013">2013</option>
+					  <option value="2014">2014</option>
+					  <option value="2015">2015</option>
+					  <option value="2016">2016</option>
+					  <option value="2017">2017</option>
+					  <option value="2018">2018</option>
+				  </select>
+				</div>
+				<div class="form-group col-md-4">
+<!-- 
+				  <label for="inputState">Month</label>
+ -->
+				  <select id="inputState" class="form-control" name="month" >
+					<option value="0" selected>Month</option>
+					  <option value="1">January</option>
+					  <option value="2">February</option>
+					  <option value="3">March</option>
+					  <option value="4">April</option>
+					  <option value="5">May</option>
+					  <option value="6">June</option>
+					  <option value="7">July</option>
+					  <option value="8">August</option>
+					  <option value="9">September</option>
+					  <option value="10">October</option>
+					  <option value="11"">November</option>
+					  <option value="12">December</option>
+				  </select>
+				</div>
+				<div class="form-group col-md-4">
+<!-- 
+				  <label for="inputState">Day</label>
+ -->
+				  <select id="inputState" class="form-control" name="day" >
+					<option selected>Day</option>
+					  <option>1</option>
+					  <option>2</option>
+					  <option>3</option>
+					  <option>4</option>
+					  <option>5</option>
+					  <option>6</option>
+					  <option>7</option>
+					  <option>8</option>
+					  <option>9</option>
+					  <option>10</option>
+					  <option>11</option>
+					  <option>12</option>
+					  <option>13</option>
+					  <option>14</option>
+					  <option>15</option>
+					  <option>16</option>
+					  <option>17</option>
+					  <option>18</option>
+					  <option>19</option>
+					  <option>20</option>
+					  <option>21</option>
+					  <option>22</option>
+					  <option>23</option>
+					  <option>24</option>
+					  <option>25</option>
+					  <option>26</option>
+					  <option>27</option>
+					  <option>28</option>
+					  <option>29</option>
+					  <option>30</option>
+					  <option>31</option>
+				  </select>
+				</div>
+			  </div>
+			  <div class="form-group">
+<!-- 
+				<label for="CAN 2000 Data">CAN 2000 Data:</label>
+ -->
+				<textarea class="form-control" id="candata" name="candata" rows="13">CAN Data</textarea>
+			  </div>
+			  <div class="form-group">
+			  	<button type="submit" class="btn btn-primary btn-lg">Translate</button>
+			  </div>
+			</form>
+
+          </div>        
+      </div><!-- /.row -->
+      
+    </div><!-- /row -->
+      <div class="row">
+      	<div class="col-lg-2 col-sm-2 portfolio-item"></div>
+        <div class="col-lg-8 col-sm-8 portfolio-item bg-light card"> 
+        	<h5> How to use: </h5>
+        	<p> 1. Choose the format, and paste up to 1000 lines of CAN data into the field. Data can be from a <a href='https://github.com/linux-can/can-utils'>CANDump</a> file, which should look something like:</p>
+			<pre style="margin-left:43px;">(1464971748.968052) can0 0CEF2700#F0787CBA7CBA7CB9
+(1464971748.980455) can0 0CF00400#FFFFFF0000FFFFFF
+(1464971748.981043) can0 18FE9600#00FFFFFFFFFFFFFF
+(1464971748.981624) can0 18FD9400#2D04FFFFFFFFFFFF</pre> 
+			<p> Or <a href='https://canlogger.csselectronics.com/downloads.php?q=canvas'>CANvas</a>, which looks like: </p>
+			<pre style="margin-left:43px;">31T192337775;1;18fedf00;7da0287d7dfffff0
+31T192337776;1;cf00300;d1000014ff0f5e7d
+31T192337780;1;18feef00;ffffff00067dfffa
+31T192337784;1;18fee000;4624040042240400</pre> 
+        	<p style="margin-left:43px;"><small> (If you've chosen CANvas, choose the year, month and day the data was collected. This isn't required unless you want the Epochtime to be accurate.) </small></p>
+			<p> 2. Click Translate
+        </div>
+      </div> <!-- /row -->
+    
+    </div><!-- /.container -->
+
+    <!-- Footer -->
+    <footer class="py-5 bg-dark">
+      <div class="container">
+        <p class="m-0 text-center text-white">Copyright &copy; Brett Heliker 2018</p>
+      </div>
+      <!-- /.container -->
+    </footer>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="https://www.brettsbeta.com/vendor/jquery/jquery.min.js"></script>
+    <script src="https://www.brettsbeta.com/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  </body>
+
+</html>
