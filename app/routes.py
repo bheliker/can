@@ -1,6 +1,14 @@
-from flask import render_template, redirect, url_for, request
+from flask import render_template, redirect, url_for, request, jsonify
 from app import app
 import datetime, json
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 sizelimit = 1000
 
@@ -12,7 +20,66 @@ def index():
 	return render_template('index.html')
 	return "Hello, World, again!"
 
+
+@app.route("/single_can_frame", methods=["POST"])
+def single_can_frame():
+	can_frame = request.args.get('can_frame')
+	id, data = can_frame.split(';')
+	results = frame_to_json(id, data)
+	return json.dumps(str(results))
+
+@app.route("/can_json", methods=["POST"])
+def can_json():
+	posted_data = request.get_json()
+	data = posted_data
+	return jsonify(str("Successful  " + str(data)))
+
+
+def frame_to_json(ID, PGNdata):
+	PGN_definitions_file = os.path.join(basedir, 'SPNs_and_PGNs2_noDesc.json')
+	PGN_file = open(PGN_definitions_file, 'r')
+	PGN_json=json.load(PGN_file)	
+
+	PStext=ID[-4:-2] # PDU specific. Either destination address or group extension. AKA DA. 
+	PFtext=ID[-6:-4] # PF: PDU format: < 240, PS is destination address. (PDU1 format); >= 240, PS is group extension. (PDU2 format)
+	PGNtext=PFtext+PStext
+
+	PGNint2=int(PGNtext,16)
+
+	if (len(PGNdata) != 16):
+		return "PGN data packet not 16 bytes" #just drop data packages that aren't 16 bytes, they're probably errors.
+
+	byteArray = [0, PGNdata[0:2], PGNdata[2:4], PGNdata[4:6], PGNdata[6:8], PGNdata[8:10], PGNdata[10:12], PGNdata[12:14], PGNdata[14:16]]
+
+	translatedData = []
+	json_data = []
+	if str(PGNint2) in PGN_json:
+		if len(PGN_json[str(PGNint2)]) == 31: #account for PGNs with only 1 SPN, then for everything else:
+			PGNstructure = [PGN_json[str(PGNint2)]]
+		else:
+			PGNstructure = []
+			for i in range(0,len(PGN_json[str(PGNint2)])-1):
+				PGNstructure.append(PGN_json[str(PGNint2)][i]) 
+
+		for suspects in range(0,len(PGNstructure)):
+			PGNname, SPNname, SPNlength, SPNstart, multiplier, offset, bytes = parseSPNs(PGN_json[str(PGNint2)][suspects])			  
+			if bytes == True:
+				value = determineSPNValue(SPNlength, SPNstart, multiplier, offset, byteArray)
+			elif bytes == False:
+				value = getValueforBits(PGN_json[str(PGNint2)][suspects], byteArray)				
+			else: 
+				value = "Can't Parse"
+			
+			if value != 'ERR':# and SPNname.encode('utf8') == "Engine Speed":
+				translatedData.append([SPNname.encode('utf8'), PGN_json[str(PGNint2)][suspects]['SPN'], value, PGN_json[str(PGNint2)][suspects]['Units'].encode('utf8')])
+				json_data.append({ "SPN":SPNname.encode('utf8'), "PGN":PGN_json[str(PGNint2)][suspects]['SPN'], "value":value, "Units":PGN_json[str(PGNint2)][suspects]['Units'].encode('utf8')})
+	else:
+		return "Error 23j3n"
+	
+	return translatedData
+	
 @app.route('/result', methods=['GET', 'POST'])
+@limiter.limit("1/second", override_defaults=False)
 def translate_can():
 	format = int(request.form.get('format'))
 	try:
