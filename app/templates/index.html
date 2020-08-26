@@ -138,7 +138,8 @@
     </div><!-- /row -->
       <div class="row">
       	<div class="col-lg-2 col-sm-2 portfolio-item"></div>
-        <div class="col-lg-8 col-sm-8 portfolio-item bg-light card"> 
+        <div class="col-lg-8 col-sm-8 portfolio-item ">
+        <div class="card bg-light" style="padding:10px;">
         	<h5> How to use: </h5>
         	<p> 1. Choose the format, and paste up to 1000 lines of CAN data into the field. Data can be from a <a href='https://github.com/linux-can/can-utils'>CANDump</a> file, which should look something like:</p>
 			<pre style="margin-left:43px;">(1464971748.968052) can0 0CEF2700#F0787CBA7CBA7CB9
@@ -152,9 +153,43 @@
 31T192337784;1;18fee000;4624040042240400</pre> 
         	<p style="margin-left:43px;"><small> (If you've chosen CANvas, choose the year, month and day the data was collected. This isn't required unless you want the Epochtime to be accurate.) </small></p>
 			<p> 2. Click Translate
+			</div>
         </div>
       </div> <!-- /row -->
     
+      <div class="row">
+      	<div class="col-lg-2 col-sm-2 portfolio-item"></div>
+        <div class="col-lg-8 col-sm-8 portfolio-item ">
+        <div class="card bg-light" style="padding:10px;">
+        	<h5> The API: </h5>
+        	<p>The API can be used for cURL, Python, or other automated methods of translating CAN data. There is a single frame method accessed by simply adding a single frame as the argument to this URL:</p>
+			<pre style="margin-left:43px;">
+<a href="http://api.greencam.xyz/canbus/single_frame?can_frame=cf00300;d1000014ff0f5e7d">http://api.greencam.xyz/canbus/single_frame?can_frame=cf00300;d1000014ff0f5e7d</a>
+			</pre>        	
+        	
+        	There is also a bulk method, utilized by POSTing the CANbus data as a JSON object, either as a set of frames:</p>
+			<pre style="margin-left:43px;">
+{
+  "can_frames": [
+      'cf00300;d1000014ff0f5e7d',
+      '18fedf00;7da0287d7dfffff0',
+      '18feef00;ffffff00067dfffa',
+      '18fee000;4624040042240400'
+  ]
+}
+			</pre> 
+			<p>  or as a stream separated by '\n' line endings:</p>
+			<pre style="margin-left:43px;">
+{
+  "can_stream": "18fedf00;7da0287d7dfffff0\ncf00300;d1000014ff0f5e7d\n18feef00;ffffff00067dfffa\n18fee000;4624040042240400n",
+}
+			</pre> 
+	<p>to the URL: http://api.greencam.xyz/canbus/json</p>
+			</div>
+        </div>
+      </div> <!-- /row -->
+
+
     </div><!-- /.container -->
 
     <!-- Footer -->

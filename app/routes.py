@@ -26,7 +26,7 @@ def index():
 	return render_template('index.html')
 
 
-@app.route("/single_can_frame", methods=["GET","POST"])
+@app.route("/canbus/single_frame", methods=["GET","POST"])
 def single_can_frame():
 	try:
 		can_frame = request.args.get('can_frame')
@@ -40,7 +40,7 @@ def single_can_frame():
 		return ("Error: "+ str(E))
 
 
-@app.route("/can_json", methods=["GET","POST"])
+@app.route("/canbus/json", methods=["GET","POST"])
 def can_json():
 	posted_data = request.get_json()
 	if posted_data == None:
