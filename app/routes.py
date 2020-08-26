@@ -1,44 +1,78 @@
 from flask import render_template, redirect, url_for, request, jsonify
 from app import app
 import datetime, json
-from flask_limiter import Limiter
+from flask_limiter import Limiter, HEADERS
 from flask_limiter.util import get_remote_address
 
+
 limiter = Limiter(
-    app,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+	app,
+	key_func=get_remote_address,
+	default_limits=["200 per day"],
 )
 
-sizelimit = 1000
+sizelimit = 100
 
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+# Global PGN Definitions – should only be loaded once at app startup and held in memory. doesn't change.
+PGN_definitions_file = os.path.join(basedir, 'SPNs_and_PGNs2_noDesc.json')
+PGN_file = open(PGN_definitions_file, 'r')
+PGN_json=json.load(PGN_file)	
+
 @app.route('/')
 def index():
 	return render_template('index.html')
-	return "Hello, World, again!"
 
 
-@app.route("/single_can_frame", methods=["POST"])
+@app.route("/single_can_frame", methods=["GET","POST"])
 def single_can_frame():
-	can_frame = request.args.get('can_frame')
-	id, data = can_frame.split(';')
-	results = frame_to_json(id, data)
-	return json.dumps(str(results))
+	try:
+		can_frame = request.args.get('can_frame')
+		id, data = can_frame.split(';')
+		results = frame_to_json(id, data)
+		if 'Error' in results:
+			return str(results)
+		else:
+			return jsonify(results =results, raw = can_frame)
+	except Exception as E:
+		return ("Error: "+ str(E))
 
-@app.route("/can_json", methods=["POST"])
+
+@app.route("/can_json", methods=["GET","POST"])
 def can_json():
 	posted_data = request.get_json()
-	data = posted_data
-	return jsonify(str("Successful  " + str(data)))
+	if posted_data == None:
+		return jsonify(Error = "No Data")
+	results = []
+	unparsed = []
+	if posted_data.get('can_frames', False):
+		can_frames = posted_data['can_frames']
+	elif len(posted_data['can_stream']) > 0:
+		can_frames = posted_data['can_stream'].split('\n')
+	for frame in can_frames:
+		print(frame)
+		if ';' in frame:
+			id, data = frame.split(';')
+		elif '#' in frame:
+			id, data = frame.split('#')
+		else: 
+			unparsed.append({"frame": frame, "Error" :'23: Missing ID and Data delimeter (should be ; or #)'})
+			
+		try:
+			r = frame_to_json(id, data)
+			if 'ERR' in r:
+				unparsed.append({"frame": frame, "Error" :'57: Unable to parse'+r[3:]})
+			else:
+				results.append(r)
+		except Exception as E:
+			unparsed.append({"frame": frame, "Error" :'69: Unable to parse: '+str(E)})
+	return jsonify(results = results, raw = can_frames, unparsed = unparsed)
+
 
 
 def frame_to_json(ID, PGNdata):
-	PGN_definitions_file = os.path.join(basedir, 'SPNs_and_PGNs2_noDesc.json')
-	PGN_file = open(PGN_definitions_file, 'r')
-	PGN_json=json.load(PGN_file)	
 
 	PStext=ID[-4:-2] # PDU specific. Either destination address or group extension. AKA DA. 
 	PFtext=ID[-6:-4] # PF: PDU format: < 240, PS is destination address. (PDU1 format); >= 240, PS is group extension. (PDU2 format)
@@ -47,7 +81,7 @@ def frame_to_json(ID, PGNdata):
 	PGNint2=int(PGNtext,16)
 
 	if (len(PGNdata) != 16):
-		return "PGN data packet not 16 bytes" #just drop data packages that aren't 16 bytes, they're probably errors.
+		return "ERR: PGN data packet not 16 bytes" #just drop data packages that aren't 16 bytes, they're probably errors.
 
 	byteArray = [0, PGNdata[0:2], PGNdata[2:4], PGNdata[4:6], PGNdata[6:8], PGNdata[8:10], PGNdata[10:12], PGNdata[12:14], PGNdata[14:16]]
 
@@ -62,22 +96,27 @@ def frame_to_json(ID, PGNdata):
 				PGNstructure.append(PGN_json[str(PGNint2)][i]) 
 
 		for suspects in range(0,len(PGNstructure)):
-			PGNname, SPNname, SPNlength, SPNstart, multiplier, offset, bytes = parseSPNs(PGN_json[str(PGNint2)][suspects])			  
+			PGNname, SPNname, SPNlength, SPNstart, multiplier, offset, bytes = parseSPNs(PGN_json[str(PGNint2)][suspects])
 			if bytes == True:
 				value = determineSPNValue(SPNlength, SPNstart, multiplier, offset, byteArray)
 			elif bytes == False:
-				value = getValueforBits(PGN_json[str(PGNint2)][suspects], byteArray)				
+				value = getValueforBits(PGN_json[str(PGNint2)][suspects], byteArray)
 			else: 
-				value = "Can't Parse"
+				value = "ERR: Unable to parse"
 			
-			if value != 'ERR':# and SPNname.encode('utf8') == "Engine Speed":
+			if type(value) == float or type(value) == int :
 				translatedData.append([SPNname.encode('utf8'), PGN_json[str(PGNint2)][suspects]['SPN'], value, PGN_json[str(PGNint2)][suspects]['Units'].encode('utf8')])
-				json_data.append({ "SPN":SPNname.encode('utf8'), "PGN":PGN_json[str(PGNint2)][suspects]['SPN'], "value":value, "Units":PGN_json[str(PGNint2)][suspects]['Units'].encode('utf8')})
+				json_data.append({ 
+					"SPN":SPNname,#.encode('utf8'), 
+					"PGN":PGN_json[str(PGNint2)][suspects]['SPN'], 
+					"value":value, 
+					"units":PGN_json[str(PGNint2)][suspects]['Units']#.encode('utf8')
+				})
 	else:
 		return "Error 23j3n"
-	
-	return translatedData
-	
+	return json_data
+
+
 @app.route('/result', methods=['GET', 'POST'])
 @limiter.limit("1/second", override_defaults=False)
 def translate_can():
@@ -90,7 +129,6 @@ def translate_can():
 		month = 1
 		day = 1
 		year = 1970
-		
 	
 	try:
 		testime = datetime.datetime(year,month,day)
@@ -128,7 +166,6 @@ def translate_can():
 	
 	#return (csv)
 	return render_template('results.html', translatedData=translatedData, csv=csv, unknown=str(unknown)).encode( "utf-8" )
-
 
 
 
