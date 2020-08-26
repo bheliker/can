@@ -22,6 +22,7 @@ PGN_file = open(PGN_definitions_file, 'r')
 PGN_json=json.load(PGN_file)	
 
 @app.route('/')
+@app.route('/canbus')
 def index():
 	return render_template('index.html')
 
